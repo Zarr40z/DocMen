@@ -14,15 +14,22 @@
 
             <div class="border-bottom p-3">
 
-                {{ $notif->message }}
+            <div class="d-flex justify-content-between align-items-start">
 
-                <br>
+                <div>
+                    <div>
+                        {{ $notif->message }}
+                    </div>
+                    <small class="text-muted">
+                        {{ $notif->created_at->diffForHumans() }}
+                    </small>
+                </div>
 
-                <small class="text-muted">
-                    {{ $notif->created_at->diffForHumans() }}
-                </small>
+             
 
-            </div>
+        </div>
+
+    </div>
 
         @empty
 

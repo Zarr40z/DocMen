@@ -86,6 +86,14 @@ class UserController extends Controller
             'email' => $request->email,
     ]);
 
+        if($request->password){
+
+        $data['password'] = bcrypt($request->password);
+
+    }
+
+$user->update($data);
+
         $user->syncRoles([$request->role]);
 
         return redirect()->route('users.index')

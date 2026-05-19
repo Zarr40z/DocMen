@@ -35,9 +35,10 @@ class DocumentController extends Controller
 
         $documents = Document::where(
             'status',
-            'disposisi'
-        )->latest()->get();
+            'pending_director'
+        )->get();
     }
+
     else{
         $documents = Document::latest()->get();
     }
@@ -95,7 +96,7 @@ class DocumentController extends Controller
 
         Notification::create([
             'user_id' => $manager->id,
-            'message' => 'Ada dokumen baru untuk manager.'
+            'message' => 'Ada dokumen baru untuk manager.',
         ]);
         }   
 
@@ -139,7 +140,7 @@ class DocumentController extends Controller
 
             Notification::create([
                 'user_id' => $document->uploaded_by,
-                'message' => 'Dokumen Anda disetujui manager.'
+                'message' => 'Dokumen Anda disetujui manager.',
             ]);
 
         } elseif($request->action == 'reject') {
@@ -150,7 +151,7 @@ class DocumentController extends Controller
 
             Notification::create([
                 'user_id' => $document->uploaded_by,
-                'message' => 'Dokumen Anda ditolak manager.'
+                'message' => 'Dokumen Anda ditolak manager.',
             ]);
             DocumentLog::create([           //log tolak manager 
                 'document_id' => $document->id,
@@ -171,7 +172,7 @@ class DocumentController extends Controller
 
                 Notification::create([
                     'user_id' => $director->id,
-                    'message' => 'Ada dokumen disposisi baru.'
+                    'message' => 'Ada dokumen disposisi baru.',
                 ]);
                 DocumentLog::create([           //log disposisi ke direktur
                     'document_id' => $document->id,
@@ -184,7 +185,7 @@ class DocumentController extends Controller
             // notif staff
             Notification::create([
                 'user_id' => $document->uploaded_by,
-                'message' => 'Dokumen Anda didisposisikan ke direktur.'
+                'message' => 'Dokumen Anda didisposisikan ke direktur.',
             ]);
         }
 
@@ -201,7 +202,7 @@ class DocumentController extends Controller
 
             Notification::create([
                 'user_id' => $document->uploaded_by,
-                'message' => 'Dokumen Anda disetujui direktur.'
+                'message' => 'Dokumen Anda disetujui direktur.',
             ]);
             DocumentLog::create([        //log approve direktur
                 'document_id' => $document->id,
@@ -217,7 +218,7 @@ class DocumentController extends Controller
 
             Notification::create([
                 'user_id' => $document->uploaded_by,
-                'message' => 'Dokumen Anda ditolak direktur.'
+                'message' => 'Dokumen Anda ditolak direktur.',
             ]);
             DocumentLog::create([        //log tolak direktur
                 'document_id' => $document->id,
@@ -243,11 +244,11 @@ class DocumentController extends Controller
     public function approve($id)
     {
     $document = Document::findOrFail($id);
-    $document->status = 'approved';
+    $document->status = 'approved_manager';
     $document->save();
     notification::create([
         'user_id' => $document->uploaded_by,
-        'message' => 'Dokumen Anda disetujui.'
+        'message' => 'Dokumen Anda disetujui.',
     ]);
     return redirect()
         ->back()
@@ -260,11 +261,11 @@ class DocumentController extends Controller
     public function reject($id)
     {
         $document = Document::findOrFail($id);
-        $document->status = 'rejected';
+        $document->status = 'rejected_manager';
         $document->save();
         notification::create([
             'user_id' => $document->uploaded_by,
-            'message' => 'Dokumen Anda ditolak.'
+            'message' => 'Dokumen Anda ditolak.',
         ]);
         return redirect()
             ->back()
@@ -277,11 +278,11 @@ class DocumentController extends Controller
     public function disposisi($id)
     {
         $document = Document::findOrFail($id);
-        $document->status = 'disposisi';
+        $document->status = 'pending_director';
         $document->save();
         notification::create([
             'user_id' => $document->uploaded_by,
-            'message' => 'Dokumen Anda didisposisikan ke direktur.'
+            'message' => 'Dokumen Anda didisposisikan ke direktur.',
         ]);
         $direkturs = User::role('direktur')->get();
 
@@ -289,7 +290,7 @@ class DocumentController extends Controller
 
             Notification::create([
                 'user_id' => $direktur->id,
-                'message' => 'Ada dokumen disposisi baru.'
+                'message' => 'Ada dokumen disposisi baru.',
             ]);
         }
 
@@ -308,7 +309,7 @@ class DocumentController extends Controller
         $document->save();
         notification::create([
             'user_id' => $document->uploaded_by,
-            'message' => 'Dokumen Anda disetujui direktur.'
+            'message' => 'Dokumen Anda disetujui direktur.',
         ]);
         return redirect()
             ->back()

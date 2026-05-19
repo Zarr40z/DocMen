@@ -46,6 +46,19 @@ class MemoController extends Controller
 
     public function store(Request $request)
     {
+
+        $roles = [];
+        if(auth()->user()->hasRole('manager')) {
+        $roles = ['staff', 'admin'];
+
+        } elseif(auth()->user()->hasRole('direktur')) {
+        $roles = [
+            'manager',
+            'staff',
+            'admin'
+        ];
+        }
+
         $request->validate([
             'file' => 'required|mimes:pdf,doc,docx,xls,xlsx|max:2048',
             'tujuan' => 'required|string|max:255',
@@ -93,7 +106,7 @@ class MemoController extends Controller
 
             Notification::create([
                 'user_id' => $receiver->id,
-                'message' => 'Ada memo baru'
+                'message' => 'Memo baru: ' . $request->title,
             ]);
         }
 

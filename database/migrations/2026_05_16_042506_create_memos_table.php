@@ -27,6 +27,9 @@ return new class extends Migration
             $table->string('target_role')
                 ->nullable();
 
+            $table->string('link')
+                ->nullable();
+
             $table->boolean('send_to_all')
                 ->default(false);
 
@@ -40,7 +43,7 @@ return new class extends Migration
 
             $table->timestamps();
                 });
-            }   
+    }
 
     /**
      * Reverse the migrations.

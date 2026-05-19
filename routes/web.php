@@ -14,8 +14,23 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
+    if(auth()->user()->hasRole('admin')){
+        return view('admin.dashboard');
+
+    }
+
+    elseif(auth()->user()->hasRole('manager')){
+        return view('manager.dashboard');
+
+    }
+
+    elseif(auth()->user()->hasRole('direktur')){
+
+        return view('direktur.dashboard');
+    }
+    return view('staff.dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -86,12 +101,11 @@ Route::middleware(['auth', 'role:direktur'])->group(function () {
 Route::get('/notifications', [NotificationController::class, 'index'])
     ->name('notifications.index');
 
-Route::get('/document-logs',
-    [DocumentLogController::class, 'index']
-)->name('document.logs');
+Route::get('/document-logs', [
+    DocumentLogController::class,
+    'index'
+])->name('document-logs.index');
 
 Route::resource('memos', MemoController::class);
 
-Route::resource('memos', MemoController::class);
-    
 require __DIR__.'/auth.php';
