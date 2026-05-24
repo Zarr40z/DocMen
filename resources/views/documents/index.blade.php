@@ -4,7 +4,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <h2 class="fw-bold">Data Dokumen</h2>
+    <h2 class="fw-bold">Dokumen</h2>
 
     @role('staff|manager')
 <a href="{{ route('documents.create') }}"
@@ -28,9 +28,8 @@
                     <th>Dibuat Oleh</th>
                     <th>Status</th>
                     <th>Tanggal</th>
-
-                    {{--Untuk keputusan manager dan direktur --}}
-                    @role('manager|direktur')
+                    
+                    @role('staff|manager|direktur')
                     <th>Aksi</th>
                     @endrole
 
@@ -52,50 +51,40 @@
                             {{ $document->judul }}
                         </a>
                     </td>
-                    <td>
-
-                        {{ $document->tujuan }}
-
-                    </td>
-
-                    <td>
-
-                       {{ $document->user?->name }}
-
-                    </td>
+                    
+                    <td>{{ $document->tujuan }}</td>
+                    <td>{{ $document->user?->name }}</td>
 
                     <td>
 
                     @if($document->status == 'pending_manager')
-
                     <span class="badge bg-warning">
-
                         Pending Manager
-
                     </span>
 
-                     @elseif($document->status == 'approved')
+                    @elseif($document->status == 'pending_director')
+                    <span class="badge bg-primary">
+                        Pending Direktur
+                    </span>
 
+                    @elseif($document->status == 'approved_manager')
                     <span class="badge bg-success">
-
-                        Approved
-
+                        Approved Manager
                     </span>
 
-                     @elseif($document->status == 'rejected')
+                    @elseif($document->status == 'approved_final')
+                    <span class="badge bg-success">
+                        Approved Final
+                    </span>
 
+                    @elseif($document->status == 'rejected_manager')
                     <span class="badge bg-danger">
-
-                        Rejected
-
+                        Rejected Manager
                     </span>
 
-                    @elseif($document->status == 'disposisi')
-
-                    <span class="badge bg-warning">
-
-                    Disposisi Direktur
-
+                    @elseif($document->status == 'rejected_final')
+                    <span class="badge bg-danger">
+                        Rejected Final
                     </span>
 
                     @endif
@@ -103,96 +92,125 @@
                     </td>
 
                     <td>
-
                         {{ $document->created_at->format('d M Y') }}
-
                     </td>
 
-                    @role('manager')
+                    @role('staff')
 
                     <td>
 
-                        <form action="{{ route('documents.approve', $document->id) }}"
-                            method="POST"
-                            class="d-inline">
+                    @if(
+                        auth()->id() == $document->uploaded_by
+                        &&
+                        $document->status == 'pending_manager'
+                    )
 
-                    @csrf
+                    <form action="{{ route('documents.destroy', $document->id) }}"
+                        method="POST"
+                        class="d-inline">
 
-                    <button class="btn btn-success btn-sm">
+                        @csrf
+                        @method('DELETE')
 
-                        Approve
-
-                    </button>
-
+                        <button class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('Yakin ingin menghapus dokumen ini?')">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </form>
 
-                <form action="{{ route('documents.reject', $document->id) }}"
-                    method="POST"
-                    class="d-inline">
+                    @endif
 
-                 @csrf
+                    </td>
 
-                <button class="btn btn-danger btn-sm">
+                    @endrole
 
-                    Reject
+                @role('manager')
 
-                </button>
+                <td class="d-flex gap-1">
 
-                </form>
+                    <form action="{{ route('documents.update', $document->id) }}"
+                        method="POST"
+                        class="d-inline">
 
-                <form action="{{ route('documents.disposisi', $document->id) }}"
-                    method="POST"
-                    class="d-inline">
+                        @csrf
+                        @method('PUT')
 
-                @csrf
+                        <button
+                            name="action"
+                            value="approve"
+                            class="btn btn-success btn-sm">
+                            Approve
+                        </button>
+                    </form>
 
-                <button class="btn btn-primary btn-sm">
+                    <form action="{{ route('documents.update', $document->id) }}"
+                        method="POST"
+                        class="d-inline">
 
-                    Disposisi
+                        @csrf
+                        @method('PUT')
 
-                </button>
+                        <button
+                            name="action"
+                            value="reject"
+                            class="btn btn-danger btn-sm">
+                            Reject
+                        </button>
+                    </form>
 
-                </form>
+                    <form action="{{ route('documents.update', $document->id) }}"
+                        method="POST"
+                        class="d-inline">
 
-            </td>
+                        @csrf
+                        @method('PUT')
 
+                        <button
+                            name="action"
+                            value="disposisi"
+                            class="btn btn-primary btn-sm">
+                            Disposisi
+                        </button>
+                    </form>
+                </td>
                 @endrole
 
-                 @role('direktur')
 
-            <td>
+                @role('direktur')
 
-                <form action="{{ route('documents.finalApprove', $document->id) }}"
-                    method="POST"
-                    class="d-inline">
+                <td class="d-flex gap-1">
 
-            @csrf
+                    <form action="{{ route('documents.update', $document->id) }}"
+                        method="POST"
+                        class="d-inline">
 
-            <button class="btn btn-success btn-sm">
+                        @csrf
+                        @method('PUT')
 
-                Final Approve
+                        <button
+                            name="action"
+                            value="approve"
+                            class="btn btn-success btn-sm">
+                            Final Approve
+                        </button>
+                    </form>
 
-            </button>
+                    <form action="{{ route('documents.update', $document->id) }}"
+                        method="POST"
+                        class="d-inline">
 
-        </form>
+                        @csrf
+                        @method('PUT')
 
-        <form action="{{ route('documents.reject', $document->id) }}"
-              method="POST"
-              class="d-inline">
-
-            @csrf
-
-            <button class="btn btn-danger btn-sm">
-
-                Reject
-
-            </button>
-
-        </form>
-
-        </td>
-
-        @endrole
+                        <button
+                            name="action"
+                            value="reject"
+                            class="btn btn-danger btn-sm">
+                            Reject
+                        </button>
+                    </form>
+                </td>
+                @endrole
 
                 </tr>
 

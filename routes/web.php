@@ -53,26 +53,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('documents', DocumentController::class);
 
-    Route::post(
-    '/documents/{id}/approve',
-    [DocumentController::class, 'approve']
-    )->name('documents.approve');
-
-Route::post(
-    '/documents/{id}/reject',
-    [DocumentController::class, 'reject']
-    )->name('documents.reject');
-
-Route::post(
-    '/documents/{id}/disposisi',
-    [DocumentController::class, 'disposisi']
-    )->name('documents.disposisi');
-
-Route::post(
-    '/documents/{id}/final-approve',
-    [DocumentController::class, 'finalApprove']
-    )->name('documents.finalApprove');
-
 });
 
 Route::middleware(['auth', 'role:staff'])->group(function () {
@@ -101,11 +81,37 @@ Route::middleware(['auth', 'role:direktur'])->group(function () {
 Route::get('/notifications', [NotificationController::class, 'index'])
     ->name('notifications.index');
 
+    Route::get('/documents-approved',
+    [DocumentController::class, 'approved']
+)->name('documents.approved');
+
+Route::get('/documents-rejected',
+    [DocumentController::class, 'rejected']
+)->name('documents.rejected');
+
 Route::get('/document-logs', [
     DocumentLogController::class,
     'index'
 ])->name('document-logs.index');
 
 Route::resource('memos', MemoController::class);
+
+Route::delete('/documents/{id}', 
+    [DocumentController::class, 'destroy']
+)->name('documents.destroy');
+
+Route::delete('/memos/{id}', 
+    [MemoController::class, 'destroy']
+)->name('memos.destroy');
+
+Route::delete(
+    '/notifications/{id}',
+    [NotificationController::class, 'destroy']
+)->name('notifications.destroy');
+
+Route::delete(
+    '/notifications-delete-all',
+    [NotificationController::class, 'deleteAll']
+)->name('notifications.deleteAll');
 
 require __DIR__.'/auth.php';

@@ -3,7 +3,7 @@
 @section('content')
 
 <h2 class="fw-bold mb-4">
-    Dashboard Admin
+    Dashboard
 </h2>
 
 <div class="row">

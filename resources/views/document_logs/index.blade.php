@@ -15,6 +15,7 @@
             <tr>
                 <th>User</th>
                 <th>Aktivitas</th>
+                <th>dokumen</th>
                 <th>Waktu</th>
             </tr>
 
@@ -25,6 +26,8 @@
                 <td>{{ $log->user->name ?? '-' }}</td>
 
                 <td>{{ $log->activity }}</td>
+
+                <td>{{ $log->document->judul ?? '-' }}</td>
 
                 <td>{{ $log->created_at }}</td>
 

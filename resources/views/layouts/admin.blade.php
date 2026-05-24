@@ -82,19 +82,107 @@
             .content-wrapper{
                 padding:15px;
             }
+
+            #sidebarMenu{
+                position:fixed;
+                left:-260px;
+                top:0;
+                width:260px;
+                height:100%;
+                z-index:1050;
+                transition:0.3s;
+                background:#ffffff;
+            }
+
+            #sidebarMenu.show{
+                left:0;
+            }
+
+            .sidebar .border-bottom{
+                display:none;
+            }
+
         }
 
     </style>
 
 </head>
 
+    <script>
+
+        function toggleSidebar(){
+
+            document
+                .getElementById('sidebarMenu')
+                .classList
+                .toggle('show');
+
+            document
+                .getElementById('overlay')
+                .classList
+                .toggle('show');
+        }
+
+        // klik overlay buat nutup
+        document
+            .getElementById('overlay')
+            .addEventListener('click', () => {
+
+                document
+                    .getElementById('sidebarMenu')
+                    .classList
+                    .remove('show');
+
+                document
+                    .getElementById('overlay')
+                    .classList
+                    .remove('show');
+        });
+
+        // auto close pas klik menu
+        document.querySelectorAll('#sidebarMenu a')
+            .forEach(link => {
+
+                link.addEventListener('click', () => {
+
+                    if(window.innerWidth <= 768){
+
+                        document
+                            .getElementById('sidebarMenu')
+                            .classList
+                            .remove('show');
+
+                        document
+                            .getElementById('overlay')
+                            .classList
+                            .remove('show');
+                    }
+                });
+            });
+
+    </script>
+
 <body>
 
-<div class="container-fluid">
-    <div class="row">
+    <nav class="navbar bg-white shadow-sm px-3 d-md-none">
+
+        <button class="btn btn-outline-dark"
+                onclick="toggleSidebar()">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+
+        <span class="fw-bold logo-text">
+            DocMen
+        </span>
+
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
 
         <!-- Sidebar -->
-        <div class="col-md-2 sidebar p-0">
+        <div class="col-md-2 sidebar p-0"
+             id="sidebarMenu">
 
             <div class="p-4 border-bottom">
 
@@ -171,6 +259,21 @@
                     </a>
                 </li>
 
+                <li class="nav-item mb-2">
+                    <a href="{{ route('documents.approved') }}"
+                    class="nav-link" style="font-size: 15px;">
+                    <i class="bi bi-check-circle me-2"></i>
+                        Dokumen Disetujui
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="{{ route('documents.rejected') }}"
+                    class="nav-link">
+                    <i class="bi bi-x-circle me-2"></i>
+                        Dokumen Ditolak
+                    </a>
+                </li>
                 @endrole
 
                 <li class="nav-item mb-2">
@@ -192,7 +295,7 @@
                     <a href="{{ route('notifications.index') }}"
                        class="nav-link">
                         <i class="bi bi-bell me-2"></i>
-                        Notifications
+                        Notifikasi
                         @if($notifCount > 0)
                         <span class="badge bg-danger ms-2">
                             {{ $notifCount }}

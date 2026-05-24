@@ -65,20 +65,28 @@
                 <td>
 
                     <a href="{{ route('users.edit', $user->id) }}"
-                       class="btn btn-warning btn-sm rounded-3">
-                        Edit
+                       class="btn btn-outline-warning btn-sm">
+
+                        <i class="bi bi-pencil"></i>
+
                     </a>
+
+                    @if(auth()->id() != $user->id)
 
                     <form action="{{ route('users.destroy', $user->id) }}"
                           method="POST"
                           class="d-inline">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-danger btn-sm rounded-3">
-                            Delete
-                        </button>
+
+                    @csrf
+                    @method('DELETE')
+
+                    <button class="btn btn-outline-danger btn-sm"
+                            onclick="return confirm('Yakin ingin menghapus user ini?')">
+                        <i class="bi bi-trash"></i>
+                    </button>
 
                     </form>
+                  @endif
 
                 </td>
 

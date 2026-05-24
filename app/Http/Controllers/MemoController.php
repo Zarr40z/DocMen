@@ -6,42 +6,51 @@ use Illuminate\Http\Request;
 use App\Models\Memo;
 use App\Models\User;
 use App\Models\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class MemoController extends Controller
 {
     public function index()
     {
-        $memos = Memo::latest()->get();
+        if(auth()->user()->hasRole('admin')){
 
-        return view(
-            'memos.index',
-            compact('memos')
-        );
+            $memos = Memo::latest()->get();
+        }
+
+        elseif(auth()->user()->hasRole('staff')){
+
+            $memos = Memo::where(
+                'target_role',
+                'staff'
+            )->latest()->get();
+        }
+
+        elseif(auth()->user()->hasRole('manager')){
+
+            $memos = Memo::where('target_role', 'manager')
+
+                ->orWhere('sender_id', auth()->id())
+
+                ->latest()
+                ->get();
+        }
+
+        elseif(auth()->user()->hasRole('direktur')){
+
+            $memos = Memo::where('target_role', 'direktur')
+
+                ->orWhere('sender_id', auth()->id())
+
+                ->latest()
+                ->get();
+        }
+
+        return view('memos.index', compact('memos'));
     }
 
     public function create()
     {
-        $roles = [];
-
-        if(auth()->user()->hasRole('manager')) {
-
-            $roles = ['staff', 'admin'];
-
-        } elseif(auth()->user()->hasRole('direktur')) {
-
-            $roles = [
-                'manager',
-                'staff',
-                'admin'
-            ];
-        }
-
-        $users = User::all();
-
-        return view(
-            'memos.create',
-            compact('roles', 'users')
-        );
+        return view('memos.create');
     }
 
     public function store(Request $request)
@@ -87,30 +96,36 @@ class MemoController extends Controller
             $request->target_role
         )->get();
 
-        foreach($receivers as $receiver){
-
             Memo::create([
 
                 'sender_id' => auth()->id(),
-                'receiver_id' => $receiver->id,
-                'target_role' =>
-                    $request->target_role,
+                'target_role' => $request->target_role,
                 'send_to_all' => true,
-                'title' =>
-                    $file->getClientOriginalName(),
-                'message' =>
-                    $request->tujuan,
-                'file' =>
-                    $filename,
+                'title' => $file->getClientOriginalName(),
+                'message' => $request->tujuan,
+                'file' => $filename,
             ]);
 
-            Notification::create([
-                'user_id' => $receiver->id,
-                'message' => 'Memo baru: ' . $request->title,
-            ]);
+            foreach($receivers as $receiver) {
+
+                Notification::create([
+                    'user_id' => $receiver->id,
+                    'message' => 'Memo baru: ' . $request->title,
+                    'link' => route('memos.index'),
+                ]);
+            }
+
+            return redirect()
+                ->route('memos.index');
+            }
+
+        public function destroy(string $id)
+        {
+            $memo = Memo::findOrFail($id);
+            Storage::disk('public')->delete('memos/' . $memo->file);
+            $memo->delete();
+    
+            return redirect()->route('memos.index')
+                ->with('success', 'Memo berhasil dihapus');
         }
-
-    return redirect()
-        ->route('memos.index');
-    }
 }

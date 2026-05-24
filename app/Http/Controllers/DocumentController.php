@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\DocumentLog;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentController extends Controller
 {
@@ -16,11 +17,15 @@ class DocumentController extends Controller
     public function index()
     {
         if(auth()->user()->hasRole('staff')){
-
         $documents = Document::where(
             'uploaded_by',
             auth()->id()
-        )->latest()->get();
+        )->whereIn('status', [
+
+            'pending_manager',
+            'pending_director'
+
+        ])->latest()->get();
     }
 
     elseif(auth()->user()->hasRole('manager')){
@@ -76,12 +81,18 @@ class DocumentController extends Controller
 
         $file->storeAs('documents', $filename, 'public');
 
+        $status = 'pending_manager';
+
+        if(auth()->user()->hasRole('manager')){
+            $status = 'pending_director';
+        }
+
         $document = Document::create([
             'nomor_dokumen' => 'DOC-' . time(),
             'judul' => $file->getClientOriginalName(),
             'tujuan' => $request->tujuan,
             'file' => $filename,
-            'status' => 'pending_manager',
+            'status' => $status,
             'uploaded_by' => auth()->id(),
         ]);
         DocumentLog::create([
@@ -90,13 +101,26 @@ class DocumentController extends Controller
             'activity' => 'Mengupload dokumen'
         ]);
 
-        $managers = User::role('manager')->get();
+        if(auth()->user()->hasRole('manager')){
+            $receivers = User::role('direktur')->get();
 
-        foreach($managers as $manager){
+        } else {
+            $receivers = User::role('manager')->get();
+        }
+
+        $message = 'Ada dokumen baru untuk manager.';
+
+        if(auth()->user()->hasRole('manager')){
+
+        $message = 'Ada dokumen baru untuk direktur.';
+        }
+
+        foreach($receivers as $receiver){
 
         Notification::create([
-            'user_id' => $manager->id,
-            'message' => 'Ada dokumen baru untuk manager.',
+            'user_id' => $receiver->id,
+            'message' => $message,
+            'link' => route('documents.index'),
         ]);
         }   
 
@@ -125,35 +149,39 @@ class DocumentController extends Controller
      */
     public function update(Request $request, Document $document)
     {
-      if(auth()->user()->hasRole('manager')) {
+    if(auth()->user()->hasRole('manager')) {
 
         if($request->action == 'approve') {
 
             $document->update([
-                'status' => 'approved_final'
-            ]);
-            DocumentLog::create([           //log approve manager
-                'document_id' => $document->id,
-                'user_id' => auth()->id(),
-                'activity' => 'Manager menyetujui dokumen'
+                'status' => 'approved_manager'
             ]);
 
             Notification::create([
                 'user_id' => $document->uploaded_by,
                 'message' => 'Dokumen Anda disetujui manager.',
+                'link' => route('documents.index'),
+            ]);
+
+            DocumentLog::create([
+                'document_id' => $document->id,
+                'user_id' => auth()->id(),
+                'activity' => 'Manager menyetujui dokumen'
             ]);
 
         } elseif($request->action == 'reject') {
 
             $document->update([
-                'status' => 'rejected_final'
+                'status' => 'rejected_manager'
             ]);
 
             Notification::create([
                 'user_id' => $document->uploaded_by,
                 'message' => 'Dokumen Anda ditolak manager.',
+                'link' => route('documents.index'),
             ]);
-            DocumentLog::create([           //log tolak manager 
+
+            DocumentLog::create([
                 'document_id' => $document->id,
                 'user_id' => auth()->id(),
                 'activity' => 'Manager menolak dokumen'
@@ -165,7 +193,6 @@ class DocumentController extends Controller
                 'status' => 'pending_director'
             ]);
 
-            // notif buat direktur
             $directors = User::role('direktur')->get();
 
             foreach($directors as $director){
@@ -173,26 +200,24 @@ class DocumentController extends Controller
                 Notification::create([
                     'user_id' => $director->id,
                     'message' => 'Ada dokumen disposisi baru.',
+                    'link' => route('documents.index'),
                 ]);
-                DocumentLog::create([           //log disposisi ke direktur
-                    'document_id' => $document->id,
-                    'user_id' => auth()->id(),
-                    'activity' => 'Mendisposisikan dokumen ke direktur'
-                ]);
-
             }
 
-            // notif staff
             Notification::create([
                 'user_id' => $document->uploaded_by,
                 'message' => 'Dokumen Anda didisposisikan ke direktur.',
+                'link' => route('documents.index'),
+            ]);
+
+            DocumentLog::create([
+                'document_id' => $document->id,
+                'user_id' => auth()->id(),
+                'activity' => 'Manager mendisposisikan dokumen ke direktur'
             ]);
         }
 
-    }
-
-    // role direktur
-    elseif(auth()->user()->hasRole('direktur')) {
+    } elseif(auth()->user()->hasRole('direktur')) {
 
         if($request->action == 'approve') {
 
@@ -203,8 +228,10 @@ class DocumentController extends Controller
             Notification::create([
                 'user_id' => $document->uploaded_by,
                 'message' => 'Dokumen Anda disetujui direktur.',
+                'link' => route('documents.index'),
             ]);
-            DocumentLog::create([        //log approve direktur
+
+            DocumentLog::create([
                 'document_id' => $document->id,
                 'user_id' => auth()->id(),
                 'activity' => 'Direktur menyetujui dokumen'
@@ -219,14 +246,15 @@ class DocumentController extends Controller
             Notification::create([
                 'user_id' => $document->uploaded_by,
                 'message' => 'Dokumen Anda ditolak direktur.',
+                'link' => route('documents.index'),
             ]);
-            DocumentLog::create([        //log tolak direktur
+
+            DocumentLog::create([
                 'document_id' => $document->id,
                 'user_id' => auth()->id(),
                 'activity' => 'Direktur menolak dokumen'
             ]);
         }
-
     }
 
     return redirect()->back();
@@ -237,85 +265,93 @@ class DocumentController extends Controller
      */
     public function destroy(string $id)
     {
-        //
-    }
-
-    //fungsi untuk setiap aksi --------------------
-    public function approve($id)
-    {
-    $document = Document::findOrFail($id);
-    $document->status = 'approved_manager';
-    $document->save();
-    notification::create([
-        'user_id' => $document->uploaded_by,
-        'message' => 'Dokumen Anda disetujui.',
-    ]);
-    return redirect()
-        ->back()
-        ->with(
-            'success',
-            'Dokumen berhasil diapprove'
-        );
-    }
-
-    public function reject($id)
-    {
         $document = Document::findOrFail($id);
-        $document->status = 'rejected_manager';
-        $document->save();
-        notification::create([
-            'user_id' => $document->uploaded_by,
-            'message' => 'Dokumen Anda ditolak.',
-        ]);
-        return redirect()
-            ->back()
-            ->with(
-                'success',
-                'Dokumen berhasil direject'
-            );
+        Storage::disk('public')->delete('documents/' . $document->file);
+        DocumentLog::where('document_id', $id)->delete();
+        $document->delete();
+
+        return redirect()->route('documents.index')
+            ->with('success', 'Dokumen berhasil dihapus');
     }
 
-    public function disposisi($id)
-    {
-        $document = Document::findOrFail($id);
-        $document->status = 'pending_director';
-        $document->save();
-        notification::create([
-            'user_id' => $document->uploaded_by,
-            'message' => 'Dokumen Anda didisposisikan ke direktur.',
-        ]);
-        $direkturs = User::role('direktur')->get();
+// fungsi untuk dokumen approved dan rejected ------------
+    public function approved()
+{
 
-        foreach($direkturs as $direktur){
+    if(auth()->user()->hasRole('staff')){
 
-            Notification::create([
-                'user_id' => $direktur->id,
-                'message' => 'Ada dokumen disposisi baru.',
-            ]);
-        }
+        $documents = Document::where(
+            'uploaded_by',
+            auth()->id()
+        )->whereIn('status', [
 
-        return redirect()
-            ->back()
-            ->with(
-                'success',
-                'Dokumen berhasil didisposisikan ke direktur'
-            );
+            'approved_manager',
+            'approved_final'
+
+        ])->latest()->get();
+
+    } elseif(auth()->user()->hasRole('manager')){
+        $documents = Document::whereIn(
+            'status',
+        [
+            'approved_manager',
+            'approved_final'
+        ]
+        )->latest()->get();
+
+    } elseif(auth()->user()->hasRole('direktur')){
+
+        $documents = Document::where(
+            'status',
+            'approved_final'
+        )->latest()->get();
+
     }
 
-    public function finalApprove($id)
-    {
-        $document = Document::findOrFail($id);
-        $document->status = 'approved_final';
-        $document->save();
-        notification::create([
-            'user_id' => $document->uploaded_by,
-            'message' => 'Dokumen Anda disetujui direktur.',
-        ]);
-        return redirect()
-            ->back()
-            ->with(
-                'success',
-                'Dokumen berhasil disetujui direktur'
-            );
+    return view(
+        'documents.approved',
+        compact('documents')
+    );
+}
+
+    public function rejected()
+{
+
+    if(auth()->user()->hasRole('staff')){
+
+        $documents = Document::where(
+            'uploaded_by',
+            auth()->id()
+        )->whereIn('status', [
+
+            'rejected_manager',
+            'rejected_final'
+
+        ])->latest()->get();
+
+    } elseif(auth()->user()->hasRole('manager')){
+
+        $documents = Document::whereIn(
+            'status',
+            [
+                'rejected_manager',
+                'rejected_final'
+            ]
+        )->latest()->get();
+
+    } elseif(auth()->user()->hasRole('direktur')){
+
+        $documents = Document::where(
+            'status',
+            'rejected_final'
+        )->latest()->get();
+
     }
+
+    return view(
+        'documents.rejected',
+        compact('documents')
+    );
+}
+
 }

@@ -9,6 +9,7 @@ class Notification extends Model
     protected $fillable = [
         'user_id',
         'message',
-        'is_read'
+        'is_read',
+        'link'  
     ];
 }

@@ -47,6 +47,26 @@
 
                 <td>{{ $memo->created_at->format('d M Y') }}</td>
 
+                <td>
+
+                @if($memo->sender_id == auth()->id())
+
+                <form action="{{ route('memos.destroy', $memo->id) }}"
+                    method="POST"
+                    class="d-inline">
+
+                    @csrf
+                    @method('DELETE')
+
+                    <button class="btn btn-outline-danger btn-sm"
+                    onclick="return confirm('Yakin ingin menghapus memo ini?')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+
+                </form>
+                @endif
+
+                </td>
             </tr>
 
             @endforeach
