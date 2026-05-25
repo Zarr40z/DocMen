@@ -79,25 +79,25 @@ class UserController extends Controller
             'name' => 'required',
             'email' => 'required|email',
             'role' => 'required',
-    ]);
+        ]);
 
-        $user->update([
+        $data = [
             'name' => $request->name,
             'email' => $request->email,
-    ]);
+        ];
 
         if($request->password){
 
-        $data['password'] = bcrypt($request->password);
+            $data['password'] = bcrypt($request->password);
 
-    }
+        }
 
-$user->update($data);
+        $user->update($data);
 
         $user->syncRoles([$request->role]);
 
         return redirect()->route('users.index')
-        ->with('success', 'User berhasil diupdate');
+            ->with('success', 'User berhasil diupdate');
     }
 
     /**

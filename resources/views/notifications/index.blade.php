@@ -62,9 +62,7 @@
 
                     <a href="{{ $notif->link }}"
                        class="btn btn-primary btn-sm">
-
                         Buka
-
                     </a>
 
                     @endif

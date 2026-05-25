@@ -69,7 +69,7 @@ class MemoController extends Controller
         }
 
         $request->validate([
-            'file' => 'required|mimes:pdf,doc,docx,xls,xlsx|max:2048',
+            'file' => 'required|mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg|max:2048',
             'tujuan' => 'required|string|max:255',
             'target_role' => 'required|string|in:' . implode(',', $roles)
         ], [
